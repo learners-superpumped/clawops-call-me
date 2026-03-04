@@ -120,7 +120,7 @@ export class CallManager {
           console.error(`[Security] WebSocket token validated for call ${callId}`);
         } else if (!callId) {
           // Token missing or not found - only allow fallback for ngrok free tier
-          const isNgrokFreeTier = new URL(this.config.publicUrl).hostname.endsWith('.ngrok-free.dev');
+          const isNgrokFreeTier = new URL(this.config.publicUrl).hostname.endsWith('.ngrok-free.app');
           if (isNgrokFreeTier) {
             // Fallback: find the most recent active call (ngrok compatibility mode)
             // Token lookup can fail due to timing issues with ngrok's free tier
@@ -286,7 +286,7 @@ export class CallManager {
           const webhookUrl = `${this.config.publicUrl}/twiml`;
 
           if (!validateTwilioSignature(authToken, signature, webhookUrl, params)) {
-            const isNgrokFreeTier = new URL(this.config.publicUrl).hostname.endsWith('.ngrok-free.dev');
+            const isNgrokFreeTier = new URL(this.config.publicUrl).hostname.endsWith('.ngrok-free.app');
             if (isNgrokFreeTier) {
               // Only log if ngrok free tier is used
               // Log for debugging but proceed anyway - ngrok free tier causes signature mismatches

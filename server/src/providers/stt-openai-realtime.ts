@@ -55,6 +55,7 @@ class OpenAIRealtimeSTTSession implements RealtimeSTTSession {
   async connect(): Promise<void> {
     this.closed = false;
     this.reconnectAttempts = 0;
+
     return this.doConnect();
   }
 
@@ -81,6 +82,7 @@ class OpenAIRealtimeSTTSession implements RealtimeSTTSession {
             input_audio_format: 'g711_ulaw',
             input_audio_transcription: {
               model: this.model,
+              language: 'ko',
             },
             turn_detection: {
               type: 'server_vad',
@@ -206,6 +208,7 @@ class OpenAIRealtimeSTTSession implements RealtimeSTTSession {
 
   sendAudio(muLawData: Buffer): void {
     if (!this.connected) return;
+
     this.sendEvent({
       type: 'input_audio_buffer.append',
       audio: muLawData.toString('base64'),
@@ -238,6 +241,7 @@ class OpenAIRealtimeSTTSession implements RealtimeSTTSession {
       this.ws = null;
     }
     this.connected = false;
+
   }
 
   isConnected(): boolean {
