@@ -45,6 +45,12 @@ export interface ServerConfig {
   providers: ProviderRegistry;
   providerConfig: ProviderConfig;  // For webhook signature verification
   transcriptTimeoutMs: number;
+  inboundEnabled: boolean;
+  inboundWhitelist: string[];
+  inboundWorkspaceDir: string;
+  inboundPermissionMode: string;
+  inboundMaxCalls: number;
+  inboundGreeting: string;
 }
 
 export function loadServerConfig(publicUrl: string): ServerConfig {
@@ -53,6 +59,10 @@ export function loadServerConfig(publicUrl: string): ServerConfig {
 
   if (!process.env.CALLME_USER_PHONE_NUMBER) {
     errors.push('Missing CALLME_USER_PHONE_NUMBER (where to call you)');
+  }
+
+  if (providerConfig.inboundEnabled && !providerConfig.inboundWorkspaceDir) {
+    errors.push('Missing CALLME_WORKSPACE_DIR (required when inbound calls are enabled)');
   }
 
   if (errors.length > 0) {
@@ -72,6 +82,12 @@ export function loadServerConfig(publicUrl: string): ServerConfig {
     providers,
     providerConfig,
     transcriptTimeoutMs,
+    inboundEnabled: providerConfig.inboundEnabled,
+    inboundWhitelist: providerConfig.inboundWhitelist,
+    inboundWorkspaceDir: providerConfig.inboundWorkspaceDir,
+    inboundPermissionMode: providerConfig.inboundPermissionMode,
+    inboundMaxCalls: providerConfig.inboundMaxCalls,
+    inboundGreeting: providerConfig.inboundGreeting,
   };
 }
 

@@ -41,6 +41,14 @@ export interface ProviderConfig {
   ttsVoice?: string;
   sttModel?: string;
   sttSilenceDurationMs?: number;
+
+  // Inbound call settings
+  inboundEnabled: boolean;
+  inboundWhitelist: string[];
+  inboundWorkspaceDir: string;
+  inboundPermissionMode: string;
+  inboundMaxCalls: number;
+  inboundGreeting: string;
 }
 
 export function loadProviderConfig(): ProviderConfig {
@@ -63,6 +71,14 @@ export function loadProviderConfig(): ProviderConfig {
     ttsVoice: process.env.CALLME_TTS_VOICE || 'onyx',
     sttModel: process.env.CALLME_STT_MODEL || 'gpt-4o-transcribe',
     sttSilenceDurationMs,
+    inboundEnabled: process.env.CALLME_INBOUND_ENABLED === 'true',
+    inboundWhitelist: process.env.CALLME_INBOUND_WHITELIST
+      ? process.env.CALLME_INBOUND_WHITELIST.split(',').map(s => s.trim()).filter(Boolean)
+      : [],
+    inboundWorkspaceDir: process.env.CALLME_WORKSPACE_DIR || '',
+    inboundPermissionMode: process.env.CALLME_INBOUND_PERMISSION_MODE || 'plan',
+    inboundMaxCalls: parseInt(process.env.CALLME_INBOUND_MAX_CALLS || '1', 10),
+    inboundGreeting: process.env.CALLME_INBOUND_GREETING || '안녕하세요. 잠시만 기다려주세요. 연결 중입니다.',
   };
 }
 
