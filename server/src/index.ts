@@ -33,12 +33,21 @@ async function connectWithRetry(daemon: DaemonClient, maxRetries = 3, delayMs = 
 }
 
 async function main() {
-  // Connect to daemon (auto-starts if needed)
   const daemon = new DaemonClient(serverRoot);
-  console.error('Connecting to CallMe daemon...');
-  await connectWithRetry(daemon);
 
-  // Create stdio MCP server
+  // Connect to daemon lazily - start in background, block on first tool call
+  let daemonReady: Promise<void> | null = null;
+  const ensureDaemon = () => {
+    if (!daemonReady) {
+      console.error('Connecting to CallMe daemon...');
+      daemonReady = connectWithRetry(daemon);
+    }
+    return daemonReady;
+  };
+  // Start connecting immediately but don't block MCP init
+  ensureDaemon();
+
+  // Create stdio MCP server - must start ASAP for Claude Code handshake
   const mcpServer = new Server(
     { name: 'callme', version: '3.0.0' },
     { capabilities: { tools: {} } }
@@ -103,6 +112,9 @@ async function main() {
 
   mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
     try {
+      // Ensure daemon is connected before handling any tool call
+      await ensureDaemon();
+
       if (request.params.name === 'initiate_call') {
         const { message } = request.params.arguments as { message: string };
         const result = await daemon.initiateCall(message);
