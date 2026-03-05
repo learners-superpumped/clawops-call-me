@@ -156,7 +156,8 @@ Add these to `~/.claude/settings.json` (recommended) or export them in your shel
 | -------------------------------- | -------------------------- | ------------------------------------------------------------------ |
 | `CALLME_CLAWOPS_BASE_URL`        | `https://api.claw-ops.com` | ClawOps API base URL (ClawOps only)                                |
 | `CALLME_TTS_VOICE`               | `onyx`                     | OpenAI voice: alloy, echo, fable, onyx, nova, shimmer              |
-| `CALLME_PORT`                    | `3333`                     | Local HTTP server port                                             |
+| `CALLME_PORT`                    | `3333`                     | Webhook HTTP server port                                           |
+| `CALLME_CONTROL_PORT`            | `3334`                     | Daemon control API port                                            |
 | `CALLME_NGROK_DOMAIN`            | -                          | Custom ngrok domain (paid feature)                                 |
 | `CALLME_TRANSCRIPT_TIMEOUT_MS`   | `180000`                   | Timeout for user speech (3 minutes)                                |
 | `CALLME_STT_SILENCE_DURATION_MS` | `800`                      | Silence duration to detect end of speech                           |
@@ -176,25 +177,28 @@ Restart Claude Code. Done!
 ## How It Works
 
 ```
-Claude Code                    CallMe MCP Server (local)
-    │                                    │
-    │  "I finished the feature..."       │
-    ▼                                    ▼
-Plugin ────stdio──────────────────► MCP Server
-                                         │
-                                         ├─► ngrok tunnel
-                                         │
-                                         ▼
-                                   Phone Provider
-                                   (ClawOps / Telnyx / Twilio)
-                                         │
-                                         ▼
-                                   Your Phone rings
-                                   You speak
-                                   Text returns to Claude
+Claude Code A ──stdio──► MCP Server A ──┐
+Claude Code B ──stdio──► MCP Server B ──┤ HTTP (localhost:3334)
+Claude Code C ──stdio──► MCP Server C ──┘
+                                        │
+                                        ▼
+                              CallMe Daemon (shared)
+                              ├── ngrok tunnel (single)
+                              ├── Webhook HTTP server
+                              ├── WebSocket media streams
+                              └── Call Manager
+                                        │
+                                        ▼
+                                  Phone Provider
+                                  (ClawOps / Telnyx / Twilio)
+                                        │
+                                        ▼
+                                  Your Phone rings
+                                  You speak
+                                  Text returns to Claude
 ```
 
-The MCP server runs locally and automatically creates an ngrok tunnel for phone provider webhooks.
+Multiple Claude Code sessions share a single daemon process. The first MCP server auto-starts the daemon; subsequent ones connect to it. The daemon manages one ngrok tunnel, one webhook server, and all call state. When all MCP servers disconnect, the daemon shuts down after 30 seconds.
 
 ---
 
@@ -291,7 +295,14 @@ Plus OpenAI costs (same for all providers):
 
 1. Verify your `CALLME_NGROK_AUTHTOKEN` is correct
 2. Check if you've hit ngrok's free tier limits
-3. Try a different port with `CALLME_PORT=3334`
+3. Try a different port with `CALLME_PORT=3335`
+
+### Daemon issues
+
+1. Check daemon logs at `~/.callme/daemon.log`
+2. Check daemon status: `curl http://127.0.0.1:3334/status`
+3. Kill stale daemon: `kill $(cat ~/.callme/daemon.pid)`
+4. Clean up lock: `rmdir ~/.callme/daemon.lock.d 2>/dev/null`
 
 ---
 
@@ -300,7 +311,8 @@ Plus OpenAI costs (same for all providers):
 ```bash
 cd server
 bun install
-bun run dev
+bun run dev          # MCP server (auto-starts daemon)
+bun run daemon       # Start daemon manually
 ```
 
 ---

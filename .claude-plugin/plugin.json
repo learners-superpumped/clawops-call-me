@@ -1,6 +1,6 @@
 {
   "name": "callme",
-  "version": "1.0.5",
+  "version": "2.0.0",
   "description": "Claude calls you on the phone when it needs your input or wants to report progress",
   "author": {
     "name": "learners-superpumped",
@@ -27,6 +27,7 @@
         "CALLME_TTS_VOICE": "${CALLME_TTS_VOICE:-onyx}",
         "CALLME_NGROK_AUTHTOKEN": "${CALLME_NGROK_AUTHTOKEN}",
         "CALLME_PORT": "${CALLME_PORT:-3333}",
+        "CALLME_CONTROL_PORT": "${CALLME_CONTROL_PORT:-3334}",
         "CALLME_TRANSCRIPT_TIMEOUT_MS": "${CALLME_TRANSCRIPT_TIMEOUT_MS:-180000}",
         "CALLME_STT_SILENCE_DURATION_MS": "${CALLME_STT_SILENCE_DURATION_MS:-800}"
       }
