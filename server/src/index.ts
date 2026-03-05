@@ -17,7 +17,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const serverRoot = dirname(__dirname); // server/
 
-async function connectWithRetry(daemon: DaemonClient, maxRetries = 5, delayMs = 3000): Promise<void> {
+async function connectWithRetry(daemon: DaemonClient, maxRetries = 3, delayMs = 1000): Promise<void> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       await daemon.connect();

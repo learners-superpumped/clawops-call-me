@@ -9,7 +9,7 @@ const PID_FILE = join(CALLME_DIR, 'daemon.pid');
 const PORT_FILE = join(CALLME_DIR, 'daemon.port');
 
 const DEFAULT_CONTROL_PORT = 3334;
-const DAEMON_READY_TIMEOUT_MS = 15000;
+const DAEMON_READY_TIMEOUT_MS = 25000;
 const DAEMON_READY_POLL_MS = 300;
 const SPAWN_RETRY_DELAY_MS = 3000;
 const MAX_SPAWN_RETRIES = 5;
