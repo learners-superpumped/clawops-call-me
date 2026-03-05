@@ -154,7 +154,7 @@ export class CallManager {
 
       if (url.pathname === '/health') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'ok', activeCalls: this.activeCalls.size }));
+        res.end(JSON.stringify({ status: 'ok', activeCalls: this.activeCalls.size, inboundCalls: this.inboundCalls.size }));
         return;
       }
 
@@ -447,14 +447,20 @@ export class CallManager {
       res.end('<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>');
       return;
     }
-    if (this.inboundCalls.size >= this.config.inboundMaxCalls) {
+    if (this.getTotalActiveCalls() >= this.config.inboundMaxCalls) {
       console.error(`[inbound] Rejecting Twilio call: max calls reached`);
       res.writeHead(200, { 'Content-Type': 'application/xml' });
       res.end('<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>');
       return;
     }
 
-    await this.handleInboundTwilioCall(callSid!, fromNumber, res);
+    if (!callSid) {
+      res.writeHead(200, { 'Content-Type': 'application/xml' });
+      res.end('<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>');
+      return;
+    }
+
+    await this.handleInboundTwilioCall(callSid, fromNumber, res);
   }
 
   private async handleInboundTwilioCall(callSid: string, fromNumber: string, res: ServerResponse): Promise<void> {
@@ -496,8 +502,7 @@ export class CallManager {
     res.end(xml);
 
     // Start conversation loop asynchronously
-    this.runInboundConversation(callId).catch((err) => {
-      console.error(`[inbound] Conversation error for ${callId}:`, err);
+    this.runInboundConversation(callId).finally(() => {
       this.cleanupInboundCall(callId).catch(console.error);
     });
   }
@@ -565,7 +570,7 @@ export class CallManager {
             const inboundState = this.inboundCalls.get(inboundHangupCallId);
             if (inboundState) {
               inboundState.hungUp = true;
-              inboundState.ws?.close();
+              // ws.close() will be handled by cleanupInboundCall
             }
           }
           break;
@@ -617,7 +622,7 @@ export class CallManager {
       await this.config.providers.phone.hangup(callControlId);
       return;
     }
-    if (this.inboundCalls.size >= this.config.inboundMaxCalls) {
+    if (this.getTotalActiveCalls() >= this.config.inboundMaxCalls) {
       console.error(`[inbound] Rejecting Telnyx call: max calls reached`);
       await this.config.providers.phone.hangup(callControlId);
       return;
@@ -641,25 +646,30 @@ export class CallManager {
     this.wsTokenToCallId.set(wsToken, callId);
 
     // Answer the inbound Telnyx call
-    const config = this.config.providerConfig;
-    const response = await fetch(
-      `https://api.telnyx.com/v2/calls/${callControlId}/actions/answer`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${config.phoneAuthToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({}),
+    try {
+      const config = this.config.providerConfig;
+      const response = await fetch(
+        `https://api.telnyx.com/v2/calls/${callControlId}/actions/answer`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${config.phoneAuthToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        }
+      );
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Telnyx answer failed: ${response.status} ${error}`);
       }
-    );
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Telnyx answer failed: ${response.status} ${error}`);
+    } catch (err) {
+      console.error(`[inbound] Failed to answer Telnyx call ${callId}:`, err);
+      this.cleanupInboundCall(callId).catch(console.error);
+      return;
     }
 
-    this.runInboundConversation(callId).catch((err) => {
-      console.error(`[inbound] Conversation error for ${callId}:`, err);
+    this.runInboundConversation(callId).finally(() => {
       this.cleanupInboundCall(callId).catch(console.error);
     });
   }
@@ -1054,7 +1064,19 @@ export class CallManager {
         state.conversationHistory.push({ speaker: 'caller', message: userMessage });
         console.error(`[${callId}] Caller said: ${userMessage}`);
 
-        const claudeResponse = await claudeSession.sendMessage(userMessage);
+        const claudeResponse = await Promise.race([
+          claudeSession.sendMessage(userMessage),
+          new Promise<never>((_, reject) => {
+            const check = setInterval(() => {
+              if (state.hungUp) {
+                clearInterval(check);
+                reject(new Error('Call was hung up by user'));
+              }
+            }, 500);
+            // Safety cleanup after timeout
+            setTimeout(() => clearInterval(check), this.config.transcriptTimeoutMs);
+          }),
+        ]);
         if (state.hungUp) break;
 
         state.conversationHistory.push({ speaker: 'claude', message: claudeResponse });
@@ -1074,7 +1096,6 @@ export class CallManager {
     }
 
     console.error(`[${callId}] Conversation ended`);
-    await this.cleanupInboundCall(callId);
   }
 
   private async waitForInboundConnection(callId: string, timeout: number): Promise<void> {
