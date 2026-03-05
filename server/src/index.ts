@@ -17,11 +17,26 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const serverRoot = dirname(__dirname); // server/
 
+async function connectWithRetry(daemon: DaemonClient, maxRetries = 5, delayMs = 3000): Promise<void> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await daemon.connect();
+      return;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[mcp] Connection attempt ${attempt}/${maxRetries} failed: ${msg}`);
+      if (attempt === maxRetries) throw error;
+      console.error(`[mcp] Retrying in ${delayMs / 1000}s...`);
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+}
+
 async function main() {
   // Connect to daemon (auto-starts if needed)
   const daemon = new DaemonClient(serverRoot);
   console.error('Connecting to CallMe daemon...');
-  await daemon.connect();
+  await connectWithRetry(daemon);
 
   // Create stdio MCP server
   const mcpServer = new Server(
