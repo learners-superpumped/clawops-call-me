@@ -15,8 +15,16 @@ import {
   validateWebSocketToken,
 } from './webhook-security.js';
 
+export class CallConflictError extends Error {
+  constructor(message: string) { super(message); this.name = 'CallConflictError'; }
+}
+export class CallForbiddenError extends Error {
+  constructor(message: string) { super(message); this.name = 'CallForbiddenError'; }
+}
+
 interface CallState {
   callId: string;
+  ownerClientId: string;
   callControlId: string | null;
   userPhoneNumber: string;
   ws: WebSocket | null;
@@ -431,7 +439,10 @@ export class CallManager {
     }
   }
 
-  async initiateCall(message: string): Promise<{ callId: string; response: string }> {
+  async initiateCall(clientId: string, message: string): Promise<{ callId: string; response: string }> {
+    if (this.activeCalls.size > 0) {
+      throw new CallConflictError('A call is already in progress');
+    }
     const callId = `call-${++this.currentCallId}-${Date.now()}`;
 
     // Create realtime transcription session via provider
@@ -444,6 +455,7 @@ export class CallManager {
 
     const state: CallState = {
       callId,
+      ownerClientId: clientId,
       callControlId: null,
       userPhoneNumber: this.config.userPhoneNumber,
       ws: null,
@@ -492,9 +504,10 @@ export class CallManager {
     }
   }
 
-  async continueCall(callId: string, message: string): Promise<string> {
+  async continueCall(clientId: string, callId: string, message: string): Promise<string> {
     const state = this.activeCalls.get(callId);
     if (!state) throw new Error(`No active call: ${callId}`);
+    if (state.ownerClientId !== clientId) throw new CallForbiddenError('Not the call owner');
 
     const response = await this.speakAndListen(state, message);
     state.conversationHistory.push({ speaker: 'claude', message });
@@ -503,17 +516,19 @@ export class CallManager {
     return response;
   }
 
-  async speakOnly(callId: string, message: string): Promise<void> {
+  async speakOnly(clientId: string, callId: string, message: string): Promise<void> {
     const state = this.activeCalls.get(callId);
     if (!state) throw new Error(`No active call: ${callId}`);
+    if (state.ownerClientId !== clientId) throw new CallForbiddenError('Not the call owner');
 
     await this.speak(state, message);
     state.conversationHistory.push({ speaker: 'claude', message });
   }
 
-  async endCall(callId: string, message: string): Promise<{ durationSeconds: number }> {
+  async endCall(clientId: string, callId: string, message: string): Promise<{ durationSeconds: number }> {
     const state = this.activeCalls.get(callId);
     if (!state) throw new Error(`No active call: ${callId}`);
+    if (state.ownerClientId !== clientId) throw new CallForbiddenError('Not the call owner');
 
     await this.speak(state, message);
 
@@ -540,6 +555,16 @@ export class CallManager {
     this.activeCalls.delete(callId);
 
     return { durationSeconds };
+  }
+
+  async forceEndCallByClient(clientId: string): Promise<void> {
+    for (const [callId, state] of this.activeCalls) {
+      if (state.ownerClientId === clientId) {
+        try {
+          await this.endCall(clientId, callId, 'Connection lost. Goodbye.');
+        } catch { /* ignore errors during forced cleanup */ }
+      }
+    }
   }
 
   private async waitForConnection(callId: string, timeout: number): Promise<void> {
@@ -781,8 +806,8 @@ export class CallManager {
   }
 
   shutdown(): void {
-    for (const callId of this.activeCalls.keys()) {
-      this.endCall(callId, 'Goodbye!').catch(console.error);
+    for (const [callId, state] of this.activeCalls) {
+      this.endCall(state.ownerClientId, callId, 'Goodbye!').catch(console.error);
     }
     this.wss?.close();
     this.httpServer?.close();
