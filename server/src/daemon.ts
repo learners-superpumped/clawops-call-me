@@ -26,16 +26,7 @@ async function main() {
   }
 
   // Load config and create CallManager
-  let serverConfig;
-  try {
-    serverConfig = loadServerConfig(publicUrl);
-  } catch (error) {
-    console.error('[daemon] Configuration error:', error instanceof Error ? error.message : error);
-    await stopNgrok();
-    cleanupPidFile();
-    process.exit(1);
-  }
-
+  const serverConfig = loadServerConfig(publicUrl);
   const callManager = new CallManager(serverConfig);
   callManager.startServer();
 
