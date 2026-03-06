@@ -19,7 +19,7 @@ export class ClawOpsPhoneProvider implements PhoneProvider {
 
   initialize(config: PhoneConfig): void {
     this.accountId = config.accountSid;
-    this.apiKey = config.apiKey || null;
+    this.apiKey = config.apiKey;
     console.error(`Phone provider: ClawOps (${this.baseUrl})`);
   }
 
