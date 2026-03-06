@@ -79,7 +79,7 @@ export class ClawOpsPhoneProvider implements PhoneProvider {
   }
 
   /**
-   * ClawOps starts streaming via TwiML response (same as Twilio) — no-op
+   * ClawOps starts streaming via TwiML response — no-op
    */
   async startStreaming(_callControlId: string, _streamUrl: string): Promise<void> {}
 
