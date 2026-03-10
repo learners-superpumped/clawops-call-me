@@ -20,7 +20,7 @@ class Config:
     openai_api_key: str = ""
 
     # TTS
-    tts_voice: str = "onyx"
+    tts_voice: str = "marin"
     tts_model: str = "tts-1"
 
     # STT
@@ -39,7 +39,7 @@ class Config:
     inbound_permission_mode: str = "plan"
     inbound_max_calls: int = 1
     inbound_whitelist: list[str] = field(default_factory=list)
-    inbound_greeting: str = "안녕하세요, 클로드입니다. 잠시만 기다려주세요."
+    inbound_greeting: str = "안녕하세요, 클로드입니다."
 
 
 def load_config() -> Config:
