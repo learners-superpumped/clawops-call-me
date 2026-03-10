@@ -59,16 +59,6 @@
 | `CALLME_USER_PHONE_NUMBER` | Claude가 전화할 내 번호 (예: `01012341234`)      |
 | `CALLME_OPENAI_API_KEY`    | OpenAI API 키 (STT + TTS)                        |
 
-#### 선택
-
-| 변수                             | 기본값                     | 설명                                                 |
-| -------------------------------- | -------------------------- | ---------------------------------------------------- |
-| `CALLME_CLAWOPS_BASE_URL`        | `https://api.claw-ops.com` | ClawOps API 기본 URL                                 |
-| `CALLME_TTS_VOICE`               | `onyx`                     | OpenAI 음성: alloy, echo, fable, onyx, nova, shimmer |
-| `CALLME_CONTROL_PORT`            | `3334`                     | 데몬 제어 API 포트                                   |
-| `CALLME_TRANSCRIPT_TIMEOUT_MS`   | `180000`                   | 사용자 음성 대기 타임아웃 (3분)                      |
-| `CALLME_STT_SILENCE_DURATION_MS` | `800`                      | 발화 종료 감지 무음 시간                             |
-
 #### 인바운드 (선택)
 
 외부에서 ClawOps 번호로 전화하면 Claude가 직접 응답합니다. [상세 설정 →](docs/architecture.md#인바운드-콜-수신-전화)
@@ -80,6 +70,16 @@
 | `CALLME_INBOUND_WHITELIST`       | —       | 추가 허용 전화번호 (쉼표 구분)               |
 | `CALLME_INBOUND_PERMISSION_MODE` | `plan`  | Claude Code 권한 모드                        |
 | `CALLME_INBOUND_MAX_CALLS`       | `1`     | 최대 동시 인바운드 콜 수                     |
+
+#### 기타 (선택)
+
+| 변수                             | 기본값                     | 설명                                                 |
+| -------------------------------- | -------------------------- | ---------------------------------------------------- |
+| `CALLME_CLAWOPS_BASE_URL`        | `https://api.claw-ops.com` | ClawOps API 기본 URL                                 |
+| `CALLME_TTS_VOICE`               | `onyx`                     | OpenAI 음성: alloy, echo, fable, onyx, nova, shimmer |
+| `CALLME_CONTROL_PORT`            | `3334`                     | 데몬 제어 API 포트                                   |
+| `CALLME_TRANSCRIPT_TIMEOUT_MS`   | `180000`                   | 사용자 음성 대기 타임아웃 (3분)                      |
+| `CALLME_STT_SILENCE_DURATION_MS` | `800`                      | 발화 종료 감지 무음 시간                             |
 
 ### 4. 플러그인 설치
 
