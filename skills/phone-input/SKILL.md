@@ -1,101 +1,101 @@
-# Phone Call Input Skill
+# 전화 통화 입력 스킬
 
-## Description
-Call the user on the phone for real-time voice conversations. Use this when you need input, want to report on completed work, or need to discuss next steps.
+## 설명
+사용자에게 전화를 걸어 실시간 음성 대화를 합니다. 입력이 필요하거나, 완료된 작업을 보고하거나, 다음 단계를 논의해야 할 때 사용합니다.
 
-## When to Use This Skill
+## 사용 시점
 
-**Use when:**
-- You've **completed a significant task** and want to report status and ask what's next
-- You need **real-time voice input** for complex decisions
-- A question requires **back-and-forth discussion** to fully understand
-- You're **blocked** and need urgent clarification to proceed
-- You want to **celebrate a milestone** or walk the user through completed work
+**사용해야 할 때:**
+- **중요한 작업을 완료**하고 상태를 보고하며 다음 작업을 물어볼 때
+- 복잡한 결정을 위해 **실시간 음성 입력**이 필요할 때
+- 질문을 완전히 이해하기 위해 **주고받는 토론**이 필요할 때
+- **진행이 막혀서** 긴급한 확인이 필요할 때
+- **마일스톤을 축하**하거나 완료된 작업을 설명할 때
 
-**Do NOT use for:**
-- Simple yes/no questions (use text instead)
-- Routine status updates that don't need discussion
-- Information the user has already provided
+**사용하지 말아야 할 때:**
+- 단순한 예/아니오 질문 (텍스트 사용)
+- 토론이 필요 없는 일반적인 상태 업데이트
+- 사용자가 이미 제공한 정보
 
-## Tools
+## 도구
 
 ### `initiate_call`
-Start a phone call with the user.
+사용자에게 전화를 겁니다.
 
-**Parameters:**
-- `message` (string): What you want to say. Be natural and conversational.
+**매개변수:**
+- `message` (string): 말할 내용. 자연스럽고 대화체로 작성.
 
-**Returns:**
-- Call ID and the user's spoken response (transcribed to text)
+**반환값:**
+- Call ID와 사용자의 음성 응답 (텍스트로 변환됨)
 
 ### `continue_call`
-Continue an active call with a follow-up message.
+진행 중인 통화에서 후속 메시지로 대화를 이어갑니다.
 
-**Parameters:**
-- `call_id` (string): The call ID from `initiate_call`
-- `message` (string): Your follow-up message
+**매개변수:**
+- `call_id` (string): `initiate_call`에서 받은 Call ID
+- `message` (string): 후속 메시지
 
-**Returns:**
-- The user's response
+**반환값:**
+- 사용자의 응답
 
 ### `speak_to_user`
-Speak a message on an active call without waiting for a response. Use this to acknowledge requests or provide status updates before starting time-consuming operations.
+진행 중인 통화에서 응답을 기다리지 않고 메시지를 말합니다. 시간이 오래 걸리는 작업 전에 요청을 확인하거나 상태를 업데이트할 때 사용합니다.
 
-**Parameters:**
-- `call_id` (string): The call ID from `initiate_call`
-- `message` (string): What to say to the user
+**매개변수:**
+- `call_id` (string): `initiate_call`에서 받은 Call ID
+- `message` (string): 사용자에게 말할 내용
 
-**Returns:**
-- Confirmation that the message was spoken
+**반환값:**
+- 메시지가 전달되었다는 확인
 
-**When to use:**
-- Acknowledge a request before starting a long operation (e.g., "Let me search for that...")
-- Provide status updates during multi-step tasks
-- Keep the conversation flowing naturally without awkward silences
+**사용 시점:**
+- 시간이 걸리는 작업 시작 전에 요청을 확인할 때 (예: "검색해볼게요...")
+- 다단계 작업 중 상태 업데이트 제공
+- 어색한 침묵 없이 대화를 자연스럽게 이어갈 때
 
 ### `end_call`
-End an active call with a closing message.
+진행 중인 통화를 마무리 메시지와 함께 종료합니다.
 
-**Parameters:**
-- `call_id` (string): The call ID from `initiate_call`
-- `message` (string): Your closing message (say goodbye!)
+**매개변수:**
+- `call_id` (string): `initiate_call`에서 받은 Call ID
+- `message` (string): 마무리 메시지 (인사를 하세요!)
 
-**Returns:**
-- Call duration in seconds
+**반환값:**
+- 통화 시간 (초)
 
-## Example Usage
+## 사용 예시
 
-**Simple conversation:**
+**간단한 대화:**
 ```
-1. initiate_call: "Hey! I finished the auth system. Should I move on to the API endpoints?"
-2. User responds: "Yes, go ahead"
-3. end_call: "Perfect! I'll start on the API endpoints. Talk soon!"
-```
-
-**Multi-turn conversation:**
-```
-1. initiate_call: "I'm working on payments. Should I use Stripe or PayPal?"
-2. User: "Use Stripe"
-3. continue_call: "Got it. Do you want the full checkout flow or just a simple button?"
-4. User: "Full checkout flow"
-5. end_call: "Awesome, I'll build the full Stripe checkout. I'll let you know when it's ready!"
+1. initiate_call: "안녕하세요! 인증 시스템을 완료했어요. API 엔드포인트로 넘어갈까요?"
+2. 사용자 응답: "네, 진행하세요"
+3. end_call: "좋습니다! API 엔드포인트 작업을 시작할게요. 나중에 또 통화해요!"
 ```
 
-**Using speak_to_user for long operations:**
+**다중 턴 대화:**
 ```
-1. initiate_call: "Hey! I finished the database migration. What should I work on next?"
-2. User: "Can you look up the latest API documentation for Stripe?"
-3. speak_to_user: "Sure! Let me search for that. Give me a moment..."
-4. [Perform web search and gather information]
-5. continue_call: "I found the latest Stripe API docs. They released v2024.1 with new payment methods..."
-6. User: "Great, implement that"
-7. end_call: "Perfect! I'll implement the new payment methods. Talk soon!"
+1. initiate_call: "결제 기능을 작업 중인데요. Stripe를 쓸까요, PayPal을 쓸까요?"
+2. 사용자: "Stripe를 쓰세요"
+3. continue_call: "알겠습니다. 전체 결제 플로우를 만들까요, 아니면 간단한 버튼만?"
+4. 사용자: "전체 결제 플로우로"
+5. end_call: "좋습니다, 전체 Stripe 결제 플로우를 만들겠습니다. 완료되면 알려드릴게요!"
 ```
 
-## Best Practices
+**speak_to_user를 활용한 시간이 걸리는 작업:**
+```
+1. initiate_call: "안녕하세요! 데이터베이스 마이그레이션을 완료했어요. 다음에 뭘 작업할까요?"
+2. 사용자: "Stripe 최신 API 문서를 찾아봐줄래?"
+3. speak_to_user: "네! 검색해볼게요. 잠시만 기다려주세요..."
+4. [웹 검색 및 정보 수집]
+5. continue_call: "Stripe 최신 API 문서를 찾았어요. 새 결제 수단이 포함된 v2024.1이 릴리스되었는데요..."
+6. 사용자: "좋아요, 그걸로 구현해주세요"
+7. end_call: "네! 새 결제 수단을 구현하겠습니다. 나중에 또 통화해요!"
+```
 
-1. **Be conversational** - Talk naturally, like a real conversation
-2. **Provide context** - Explain what you've done before asking questions
-3. **Offer clear options** - Make decisions easy with specific choices
-4. **Use speak_to_user for acknowledgments** - Before time-consuming operations (searches, file reads, etc.), use `speak_to_user` to acknowledge the request so the user isn't left wondering what's happening
-5. **Always end gracefully** - Say goodbye and state what you'll do next
+## 모범 사례
+
+1. **대화체로 말하기** - 실제 대화처럼 자연스럽게
+2. **맥락 제공** - 질문하기 전에 무엇을 했는지 설명
+3. **명확한 선택지 제시** - 구체적인 옵션으로 의사결정을 쉽게
+4. **확인에 speak_to_user 활용** - 시간이 걸리는 작업(검색, 파일 읽기 등) 전에 `speak_to_user`로 요청을 확인하여 사용자가 기다리지 않게
+5. **항상 깔끔하게 종료** - 인사하고 다음에 할 일을 명시

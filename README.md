@@ -1,47 +1,47 @@
-# CallMe
+# ClawOps CallMe
 
-**Minimal plugin that lets Claude Code call you on the phone.**
+**Claude Code가 전화로 당신에게 연락하는 플러그인.**
 
-Start a task, walk away. Your phone/watch rings when Claude is done, stuck, or needs a decision.
+작업을 시작하고 자리를 비우세요. Claude가 완료했거나, 막혔거나, 결정이 필요할 때 전화/워치가 울립니다.
 
-<img src="./call-me-comic-min.png" width="800" alt="CallMe comic strip">
+<img src="./call-me-comic-min.png" width="800" alt="ClawOps CallMe 만화">
 
-- **Minimal plugin** - Does one thing: call you on the phone. No crazy setups.
-- **Multi-turn conversations** - Talk through decisions naturally.
-- **Works anywhere** - Smartphone, smartwatch, or even landline!
-- **Tool-use composable** - Claude can e.g. do a web search while on a call with you.
+- **미니멀 플러그인** - 딱 하나의 기능: 전화 걸기. 복잡한 설정 없음.
+- **다중 턴 대화** - 자연스럽게 대화하며 의사결정.
+- **어디서나 동작** - 스마트폰, 스마트워치, 유선 전화까지!
+- **Tool-use 조합 가능** - 통화 중에도 Claude가 웹 검색 등 다른 도구를 사용할 수 있음.
 
 ---
 
-## Quick Start
+## 빠른 시작
 
-### 1. Get Required Accounts
+### 1. 필요한 계정 준비
 
-You'll need:
+다음이 필요합니다:
 
-- **Phone provider**: [ClawOps](https://platform.claw-ops.com) (self-hosted CPaaS)
-- **OpenAI API key**: For speech-to-text and text-to-speech
-- **ngrok account**: Free at [ngrok.com](https://ngrok.com) (for webhook tunneling)
+- **전화 제공자**: [ClawOps](https://platform.claw-ops.com) (자체 호스팅 CPaaS)
+- **OpenAI API 키**: 음성-텍스트 변환(STT) 및 텍스트-음성 변환(TTS)용
+- **ngrok 계정**: [ngrok.com](https://ngrok.com)에서 무료 가입 (웹훅 터널링용)
 
-### 2. Set Up Phone Provider
+### 2. 전화 제공자 설정
 
-[ClawOps](https://platform.claw-ops.com) is a self-hosted Asterisk-based CPaaS that provides a Twilio-compatible Voice API. Use this if you have your own SIP trunk (e.g. KT Business).
+[ClawOps](https://platform.claw-ops.com)는 Asterisk 기반 자체 호스팅 CPaaS로, Twilio 호환 Voice API를 제공합니다. SIP 트렁크(예: KT 비즈니스)를 보유한 경우 사용하세요.
 
-**Prerequisites**: A running ClawOps instance.
+**전제 조건**: ClawOps 인스턴스가 실행 중이어야 합니다.
 
-**Steps:**
+**설정 단계:**
 
-1. Log in to the ClawOps web dashboard
-2. Go to **Settings → API Keys** and create an API key (you'll get an `sk_...` key — save it, it's only shown once)
-3. Copy your **Account ID** and **Webhook Signing Key** from the same settings page
-4. Provision a phone number via the dashboard (`Numbers` → `Provision Number`)
-   - The provisioned number is used as `CALLME_PHONE_NUMBER`
-5. Register your SIP softphone (e.g. Linphone) using the SIP credentials shown after provisioning
-   - The softphone extension is used as `CALLME_USER_PHONE_NUMBER`
+1. ClawOps 웹 대시보드에 로그인
+2. **설정 → API Keys**에서 API 키 생성 (`sk_...` 키가 발급됨 — 한 번만 표시되므로 저장 필수)
+3. 같은 설정 페이지에서 **Account ID**와 **Webhook Signing Key** 복사
+4. 대시보드에서 전화번호 프로비저닝 (`Numbers` → `Provision Number`)
+   - 프로비저닝된 번호가 `CALLME_PHONE_NUMBER`로 사용됨
+5. 프로비저닝 후 표시되는 SIP 인증 정보로 SIP 소프트폰(예: Linphone) 등록
+   - 소프트폰 내선번호가 `CALLME_USER_PHONE_NUMBER`로 사용됨
 
-### 3. Set Environment Variables
+### 3. 환경변수 설정
 
-Add these to `~/.claude/settings.json` (recommended) or export them in your shell.
+`~/.claude/settings.json`(권장) 또는 셸에서 export로 설정하세요.
 
 ```json
 {
@@ -58,42 +58,42 @@ Add these to `~/.claude/settings.json` (recommended) or export them in your shel
 }
 ```
 
-#### Required Variables
+#### 필수 변수
 
-| Variable                   | Description                                        |
-| -------------------------- | -------------------------------------------------- |
-| `CALLME_PHONE_ACCOUNT_SID` | ClawOps Account ID (`AC...`)                       |
-| `CALLME_PHONE_API_KEY`     | ClawOps API key for API calls (`sk_...`)            |
-| `CALLME_PHONE_SIGNING_KEY` | ClawOps Webhook signing key for signature verification |
-| `CALLME_PHONE_NUMBER`      | Phone number Claude calls from (E.164 format)      |
-| `CALLME_USER_PHONE_NUMBER` | Your phone number or SIP extension to receive calls |
-| `CALLME_OPENAI_API_KEY`    | OpenAI API key (for TTS and realtime STT)          |
-| `CALLME_NGROK_AUTHTOKEN`   | ngrok auth token for webhook tunneling             |
+| 변수                       | 설명                                    |
+| -------------------------- | --------------------------------------- |
+| `CALLME_PHONE_ACCOUNT_SID` | ClawOps Account ID (`AC...`)            |
+| `CALLME_PHONE_API_KEY`     | ClawOps API 키 (`sk_...`)               |
+| `CALLME_PHONE_SIGNING_KEY` | ClawOps 웹훅 서명 키 (서명 검증용)      |
+| `CALLME_PHONE_NUMBER`      | Claude가 발신하는 전화번호 (E.164 형식) |
+| `CALLME_USER_PHONE_NUMBER` | 수신할 전화번호 또는 SIP 내선번호       |
+| `CALLME_OPENAI_API_KEY`    | OpenAI API 키 (TTS 및 실시간 STT용)     |
+| `CALLME_NGROK_AUTHTOKEN`   | ngrok 인증 토큰 (웹훅 터널링용)         |
 
-#### Optional Variables
+#### 선택 변수
 
-| Variable                         | Default                    | Description                                           |
-| -------------------------------- | -------------------------- | ----------------------------------------------------- |
-| `CALLME_CLAWOPS_BASE_URL`        | `https://api.claw-ops.com` | ClawOps API base URL                                  |
-| `CALLME_TTS_VOICE`               | `onyx`                     | OpenAI voice: alloy, echo, fable, onyx, nova, shimmer |
-| `CALLME_PORT`                    | `3333`                     | Webhook HTTP server port                              |
-| `CALLME_CONTROL_PORT`            | `3334`                     | Daemon control API port                               |
-| `CALLME_NGROK_DOMAIN`            | -                          | Custom ngrok domain (paid feature)                    |
-| `CALLME_TRANSCRIPT_TIMEOUT_MS`   | `180000`                   | Timeout for user speech (3 minutes)                   |
-| `CALLME_STT_SILENCE_DURATION_MS` | `800`                      | Silence duration to detect end of speech              |
+| 변수                             | 기본값                     | 설명                                                 |
+| -------------------------------- | -------------------------- | ---------------------------------------------------- |
+| `CALLME_CLAWOPS_BASE_URL`        | `https://api.claw-ops.com` | ClawOps API 기본 URL                                 |
+| `CALLME_TTS_VOICE`               | `onyx`                     | OpenAI 음성: alloy, echo, fable, onyx, nova, shimmer |
+| `CALLME_PORT`                    | `3333`                     | 웹훅 HTTP 서버 포트                                  |
+| `CALLME_CONTROL_PORT`            | `3334`                     | 데몬 제어 API 포트                                   |
+| `CALLME_NGROK_DOMAIN`            | -                          | 커스텀 ngrok 도메인 (유료 기능)                      |
+| `CALLME_TRANSCRIPT_TIMEOUT_MS`   | `180000`                   | 사용자 음성 대기 타임아웃 (3분)                      |
+| `CALLME_STT_SILENCE_DURATION_MS` | `800`                      | 발화 종료 감지 무음 시간                             |
 
-### 4. Install Plugin
+### 4. 플러그인 설치
 
 ```bash
 /plugin marketplace add learners-superpumped/call-me
 /plugin install callme@callme
 ```
 
-Restart Claude Code. Done!
+Claude Code를 재시작하면 완료!
 
 ---
 
-## How It Works
+## 동작 원리
 
 ```
 Claude Code A ──stdio──► MCP Server A ──┐
@@ -101,193 +101,193 @@ Claude Code B ──stdio──► MCP Server B ──┤ HTTP (localhost:3334)
 Claude Code C ──stdio──► MCP Server C ──┘
                                         │
                                         ▼
-                              CallMe Daemon (shared)
-                              ├── ngrok tunnel (single)
-                              ├── Webhook HTTP server
-                              ├── WebSocket media streams
+                            ClawOps CallMe Daemon (공유)
+                              ├── ngrok 터널 (단일)
+                              ├── 웹훅 HTTP 서버
+                              ├── WebSocket 미디어 스트림
                               └── Call Manager
                                         │
                                         ▼
                                     ClawOps
                                         │
                                         ▼
-                                  Your Phone rings
-                                  You speak
-                                  Text returns to Claude
+                                  전화가 울림
+                                  사용자가 말함
+                                  텍스트가 Claude에게 전달
 ```
 
-Multiple Claude Code sessions share a single daemon process. The first MCP server auto-starts the daemon; subsequent ones connect to it. The daemon manages one ngrok tunnel, one webhook server, and all call state. When all MCP servers disconnect, the daemon shuts down after 30 seconds.
+여러 Claude Code 세션이 하나의 데몬 프로세스를 공유합니다. 첫 번째 MCP 서버가 데몬을 자동 시작하고, 이후 서버들은 기존 데몬에 연결됩니다. 데몬은 하나의 ngrok 터널, 하나의 웹훅 서버, 모든 통화 상태를 관리합니다. 모든 MCP 서버가 연결을 끊으면 30초 후 데몬이 자동 종료됩니다.
 
 ---
 
-## Tools
+## 도구(Tools)
 
 ### `initiate_call`
 
-Start a phone call.
+전화를 겁니다.
 
 ```typescript
 const { callId, response } = await initiate_call({
-  message: "Hey! I finished the auth system. What should I work on next?",
+  message: "안녕하세요! 인증 시스템을 완료했어요. 다음에 뭘 작업할까요?",
 });
 ```
 
 ### `continue_call`
 
-Continue with follow-up questions.
+후속 질문으로 대화를 이어갑니다.
 
 ```typescript
 const response = await continue_call({
   call_id: callId,
-  message: "Got it. Should I add rate limiting too?",
+  message: "알겠습니다. 레이트 리미팅도 추가할까요?",
 });
 ```
 
 ### `speak_to_user`
 
-Speak to the user without waiting for a response. Useful for acknowledging requests before time-consuming operations.
+응답을 기다리지 않고 사용자에게 말합니다. 시간이 오래 걸리는 작업 전에 요청을 확인할 때 유용합니다.
 
 ```typescript
 await speak_to_user({
   call_id: callId,
-  message: "Let me search for that information. Give me a moment...",
+  message: "해당 정보를 검색해볼게요. 잠시만 기다려주세요...",
 });
-// Continue with your long-running task
+// 시간이 걸리는 작업 수행
 const results = await performSearch();
-// Then continue the conversation
+// 대화 계속
 const response = await continue_call({
   call_id: callId,
-  message: `I found ${results.length} results...`,
+  message: `${results.length}개의 결과를 찾았습니다...`,
 });
 ```
 
 ### `end_call`
 
-End the call.
+통화를 종료합니다.
 
 ```typescript
 await end_call({
   call_id: callId,
-  message: "Perfect, I'll get started. Talk soon!",
+  message: "좋습니다, 바로 시작할게요. 나중에 또 통화해요!",
 });
 ```
 
 ---
 
-## Inbound Calls
+## 인바운드 콜 (수신 전화)
 
-External callers (or you) can call the phone number directly, and Claude will answer with full access to your workspace code. This turns your phone number into a voice interface for Claude Code.
+외부 발신자(또는 본인)가 전화번호로 직접 전화하면 Claude가 워크스페이스 코드에 접근하여 응답합니다. 전화번호가 Claude Code의 음성 인터페이스가 됩니다.
 
-### Setup
+### 설정
 
-Enable inbound calls by adding these variables alongside your existing configuration:
+기존 환경변수와 함께 다음 변수를 추가하여 인바운드 콜을 활성화하세요:
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `CALLME_INBOUND_ENABLED` | No | `false` | Enable inbound call handling |
-| `CALLME_WORKSPACE_DIR` | When inbound enabled | — | Directory where Claude CLI runs for inbound calls |
-| `CALLME_INBOUND_WHITELIST` | No | — | Additional allowed phone numbers (comma-separated, E.164) |
-| `CALLME_INBOUND_PERMISSION_MODE` | No | `plan` | Claude Code permission mode for inbound sessions |
-| `CALLME_INBOUND_MAX_CALLS` | No | `1` | Max concurrent inbound calls |
-| `CALLME_INBOUND_GREETING` | No | Korean default | Greeting message when call is answered |
+| 변수                             | 필수             | 기본값        | 설명                                           |
+| -------------------------------- | ---------------- | ------------- | ---------------------------------------------- |
+| `CALLME_INBOUND_ENABLED`         | 아니오           | `false`       | 인바운드 콜 처리 활성화                        |
+| `CALLME_WORKSPACE_DIR`           | 인바운드 활성 시 | —             | 인바운드 콜에서 Claude CLI가 실행되는 디렉토리 |
+| `CALLME_INBOUND_WHITELIST`       | 아니오           | —             | 추가 허용 전화번호 (쉼표 구분, E.164 형식)     |
+| `CALLME_INBOUND_PERMISSION_MODE` | 아니오           | `plan`        | 인바운드 세션의 Claude Code 권한 모드          |
+| `CALLME_INBOUND_MAX_CALLS`       | 아니오           | `1`           | 최대 동시 인바운드 콜 수                       |
+| `CALLME_INBOUND_GREETING`        | 아니오           | 한국어 기본값 | 전화 응답 시 인사 메시지                       |
 
-### How It Works
+### 동작 흐름
 
 ```
-Caller dials your number
+발신자가 전화번호로 전화
         │
         ▼
-ClawOps → webhook → CallMe Daemon
+ClawOps → 웹훅 → ClawOps CallMe Daemon
         │
         ▼
-Whitelist check (user number auto-allowed)
+화이트리스트 확인 (사용자 번호 자동 허용)
         │
         ▼
-TTS greeting plays (covers cold start delay)
+TTS 인사말 재생 (콜드 스타트 지연 커버)
         │
         ▼
-Claude CLI spawns in CALLME_WORKSPACE_DIR
+CALLME_WORKSPACE_DIR에서 Claude CLI 실행
         │
         ▼
-Voice conversation loop (STT ↔ Claude ↔ TTS)
+음성 대화 루프 (STT ↔ Claude ↔ TTS)
 ```
 
-1. An incoming call hits the daemon via webhook
-2. The caller's number is checked against the whitelist
-3. A TTS greeting plays immediately, covering the 5–15s cold start while Claude CLI launches
-4. Claude CLI spawns in `CALLME_WORKSPACE_DIR` with your MCP settings, skills, and `CLAUDE.md`
-5. The caller speaks naturally with Claude through the voice conversation loop
+1. 수신 전화가 웹훅을 통해 데몬에 도달
+2. 발신자 번호를 화이트리스트에서 확인
+3. TTS 인사말이 즉시 재생되어 Claude CLI 실행 지연(5~15초)을 커버
+4. `CALLME_WORKSPACE_DIR`에서 MCP 설정, 스킬, `CLAUDE.md`와 함께 Claude CLI 실행
+5. 발신자가 음성 대화 루프를 통해 Claude와 자연스럽게 대화
 
-### Notes
+### 참고 사항
 
-- Your phone number (`CALLME_USER_PHONE_NUMBER`) is automatically whitelisted — no need to add it separately
-- The greeting TTS covers the Claude CLI cold start delay (5–15s on first turn)
-- Outbound and inbound calls share the concurrency limit — only one call at a time by default
-- Inbound sessions use existing MCP settings, skills, and `CLAUDE.md` from the workspace
-
----
-
-## Costs
-
-| Service        | Cost                      |
-| -------------- | ------------------------- |
-| Outbound calls | SIP trunk cost only       |
-| Phone number   | Provisioned via ClawOps   |
-
-Plus OpenAI costs:
-
-- **Speech-to-text**: ~$0.006/min (Realtime STT)
-- **Text-to-speech**: ~$0.02/min (TTS)
-
-**Total**: ~$0.02/min + SIP trunk
+- `CALLME_USER_PHONE_NUMBER`는 자동으로 화이트리스트에 추가됨 — 별도 등록 불필요
+- TTS 인사말이 Claude CLI 콜드 스타트 지연(첫 턴에서 5~15초)을 커버
+- 아웃바운드와 인바운드 콜이 동시성 제한을 공유 — 기본적으로 한 번에 한 통화만 가능
+- 인바운드 세션은 워크스페이스의 기존 MCP 설정, 스킬, `CLAUDE.md`를 사용
 
 ---
 
-## Troubleshooting
+## 비용
 
-### Claude doesn't use the tool
+| 서비스    | 비용                   |
+| --------- | ---------------------- |
+| 발신 통화 | SIP 트렁크 비용만      |
+| 전화번호  | ClawOps에서 프로비저닝 |
 
-1. Check all required environment variables are set (ideally in `~/.claude/settings.json`)
-2. Restart Claude Code after installing the plugin
-3. Try explicitly: "Call me to discuss the next steps when you're done."
+OpenAI 비용 추가:
 
-### Call doesn't connect
+- **음성-텍스트 변환(STT)**: ~$0.006/분 (Realtime STT)
+- **텍스트-음성 변환(TTS)**: ~$0.02/분
 
-1. Check the MCP server logs (stderr) with `claude --debug`
-2. Verify your ClawOps credentials are correct
-3. Make sure ngrok can create a tunnel
-
-### Audio issues
-
-1. Ensure your phone number is provisioned in ClawOps
-2. Check that the webhook URL matches your ngrok URL
-
-### ngrok errors
-
-1. Verify your `CALLME_NGROK_AUTHTOKEN` is correct
-2. Check if you've hit ngrok's free tier limits
-3. Try a different port with `CALLME_PORT=3335`
-
-### Daemon issues
-
-1. Check daemon logs at `~/.callme/daemon.log`
-2. Check daemon status: `curl http://127.0.0.1:3334/status`
-3. Kill stale daemon: `kill $(cat ~/.callme/daemon.pid)`
-4. Clean up lock: `rmdir ~/.callme/daemon.lock.d 2>/dev/null`
+**합계**: ~$0.02/분 + SIP 트렁크
 
 ---
 
-## Development
+## 문제 해결
+
+### Claude가 도구를 사용하지 않는 경우
+
+1. 모든 필수 환경변수가 설정되었는지 확인 (`~/.claude/settings.json` 권장)
+2. 플러그인 설치 후 Claude Code 재시작
+3. 명시적으로 요청: "작업이 끝나면 전화해서 다음 단계를 논의해줘."
+
+### 전화가 연결되지 않는 경우
+
+1. `claude --debug`로 MCP 서버 로그(stderr) 확인
+2. ClawOps 인증 정보가 올바른지 확인
+3. ngrok이 터널을 생성할 수 있는지 확인
+
+### 오디오 문제
+
+1. ClawOps에서 전화번호가 프로비저닝되었는지 확인
+2. 웹훅 URL이 ngrok URL과 일치하는지 확인
+
+### ngrok 오류
+
+1. `CALLME_NGROK_AUTHTOKEN`이 올바른지 확인
+2. ngrok 무료 티어 한도에 도달했는지 확인
+3. `CALLME_PORT=3335`로 다른 포트 시도
+
+### 데몬 문제
+
+1. `~/.callme/daemon.log`에서 데몬 로그 확인
+2. 데몬 상태 확인: `curl http://127.0.0.1:3334/status`
+3. 비정상 데몬 종료: `kill $(cat ~/.callme/daemon.pid)`
+4. 잠금 해제: `rmdir ~/.callme/daemon.lock.d 2>/dev/null`
+
+---
+
+## 개발
 
 ```bash
 cd server
 bun install
-bun run dev          # MCP server (auto-starts daemon)
-bun run daemon       # Start daemon manually
+bun run dev          # MCP 서버 (데몬 자동 시작)
+bun run daemon       # 데몬 수동 시작
 ```
 
 ---
 
-## License
+## 라이선스
 
 MIT

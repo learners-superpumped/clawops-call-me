@@ -1,10 +1,10 @@
 #!/usr/bin/env bun
 
 /**
- * CallMe MCP Server (Daemon Client)
+ * ClawOps CallMe MCP Server (Daemon Client)
  *
- * A stdio-based MCP server that lets Claude call you on the phone.
- * Connects to a shared daemon that manages ngrok, webhooks, and calls.
+ * Claude가 전화로 사용자에게 연락할 수 있게 하는 stdio 기반 MCP 서버.
+ * ngrok, 웹훅, 통화를 관리하는 공유 데몬에 연결됩니다.
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -39,7 +39,7 @@ async function main() {
   let daemonReady: Promise<void> | null = null;
   const ensureDaemon = () => {
     if (!daemonReady) {
-      console.error('Connecting to CallMe daemon...');
+      console.error('Connecting to ClawOps CallMe daemon...');
       daemonReady = connectWithRetry(daemon);
     }
     return daemonReady;
@@ -164,7 +164,7 @@ async function main() {
   await mcpServer.connect(transport);
 
   console.error('');
-  console.error('CallMe MCP server ready (daemon mode)');
+  console.error('ClawOps CallMe MCP server ready (daemon mode)');
   console.error('');
 
   const shutdown = async () => {
