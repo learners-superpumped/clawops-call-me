@@ -17,8 +17,6 @@
 
 ### 1. 필요한 계정 준비
 
-다음이 필요합니다:
-
 - **ClawOps 계정**: [platform.claw-ops.com](https://platform.claw-ops.com)에서 가입
 - **OpenAI API 키**: 음성 인식(STT) 및 음성 합성(TTS)용
 - **Python 3.11+** 및 [uv](https://docs.astral.sh/uv/getting-started/installation/)
@@ -27,44 +25,41 @@
 
 [platform.claw-ops.com](https://platform.claw-ops.com)에서 가입하고 전화번호를 등록하세요.
 
-**설정 단계:**
-
 1. [platform.claw-ops.com](https://platform.claw-ops.com)에서 가입/로그인
-2. **API & Webhooks** 페이지에서 **+ 새 키 생성** 클릭 (`sk_...` 키가 발급됨 — 한 번만 표시되므로 저장 필수)
+2. **API & Webhooks** 페이지에서 **+ 새 키 생성** 클릭
+   - `sk_...` 키가 발급됨 — 한 번만 표시되므로 저장 필수
 3. 같은 페이지에서 **Account ID** (`AC...`) 복사
 4. **전화번호** 페이지에서 **+ 번호 추가** 클릭
-   - 등록된 번호가 `CALLME_PHONE_NUMBER`로 사용됨 (예: `070-5235-8010`)
-5. SIP 소프트폰(예: Linphone)으로 등록하여 수신 설정
-   - 소프트폰 내선번호가 `CALLME_USER_PHONE_NUMBER`로 사용됨
+   - 등록된 번호를 `CALLME_PHONE_NUMBER`에 입력 (예: `07012341234`)
+5. Claude가 전화할 내 번호를 `CALLME_USER_PHONE_NUMBER`에 입력 (예: `01012341234`)
 
 ### 3. 환경변수 설정
 
-`~/.claude/settings.json`(권장) 또는 셸에서 export로 설정하세요.
+`~/.claude/settings.json`에 추가하세요.
 
 ```json
 {
   "env": {
     "CALLME_PHONE_ACCOUNT_SID": "ACxxxxxxxxxxxxxxxx",
     "CALLME_PHONE_API_KEY": "sk_your-api-key",
-    "CALLME_PHONE_NUMBER": "+821012345678",
-    "CALLME_USER_PHONE_NUMBER": "softphone",
-    "CALLME_CLAWOPS_BASE_URL": "https://api.claw-ops.com",
+    "CALLME_PHONE_NUMBER": "07012341234",
+    "CALLME_USER_PHONE_NUMBER": "01012341234",
     "CALLME_OPENAI_API_KEY": "sk-..."
   }
 }
 ```
 
-#### 필수 변수
+#### 필수
 
-| 변수                       | 설명                                    |
-| -------------------------- | --------------------------------------- |
-| `CALLME_PHONE_ACCOUNT_SID` | ClawOps Account ID (`AC...`)            |
-| `CALLME_PHONE_API_KEY`     | ClawOps API 키 (`sk_...`)               |
-| `CALLME_PHONE_NUMBER`      | Claude가 발신하는 전화번호 (E.164 형식) |
-| `CALLME_USER_PHONE_NUMBER` | 수신할 전화번호 또는 SIP 내선번호       |
-| `CALLME_OPENAI_API_KEY`    | OpenAI API 키 (TTS 및 실시간 STT용)     |
+| 변수                       | 설명                                             |
+| -------------------------- | ------------------------------------------------ |
+| `CALLME_PHONE_ACCOUNT_SID` | ClawOps Account ID (`AC...`)                     |
+| `CALLME_PHONE_API_KEY`     | ClawOps API 키 (`sk_...`)                        |
+| `CALLME_PHONE_NUMBER`      | ClawOps에서 등록한 발신 번호 (예: `07012341234`) |
+| `CALLME_USER_PHONE_NUMBER` | Claude가 전화할 내 번호 (예: `01012341234`)      |
+| `CALLME_OPENAI_API_KEY`    | OpenAI API 키 (STT + TTS)                        |
 
-#### 선택 변수
+#### 선택
 
 | 변수                             | 기본값                     | 설명                                                 |
 | -------------------------------- | -------------------------- | ---------------------------------------------------- |
@@ -73,6 +68,18 @@
 | `CALLME_CONTROL_PORT`            | `3334`                     | 데몬 제어 API 포트                                   |
 | `CALLME_TRANSCRIPT_TIMEOUT_MS`   | `180000`                   | 사용자 음성 대기 타임아웃 (3분)                      |
 | `CALLME_STT_SILENCE_DURATION_MS` | `800`                      | 발화 종료 감지 무음 시간                             |
+
+#### 인바운드 (선택)
+
+외부에서 ClawOps 번호로 전화하면 Claude가 직접 응답합니다. [상세 설정 →](docs/architecture.md#인바운드-콜-수신-전화)
+
+| 변수                             | 기본값  | 설명                                         |
+| -------------------------------- | ------- | -------------------------------------------- |
+| `CALLME_INBOUND_ENABLED`         | `false` | 인바운드 콜 활성화                           |
+| `CALLME_WORKSPACE_DIR`           | —       | Claude CLI가 실행될 프로젝트 디렉토리 (필수) |
+| `CALLME_INBOUND_WHITELIST`       | —       | 추가 허용 전화번호 (쉼표 구분)               |
+| `CALLME_INBOUND_PERMISSION_MODE` | `plan`  | Claude Code 권한 모드                        |
+| `CALLME_INBOUND_MAX_CALLS`       | `1`     | 최대 동시 인바운드 콜 수                     |
 
 ### 4. 플러그인 설치
 
@@ -84,38 +91,6 @@
 `uv`가 설치되어 있으면 Python 의존성이 자동으로 관리됩니다. Claude Code를 재시작하면 완료!
 
 > **전제 조건**: [uv](https://docs.astral.sh/uv/getting-started/installation/)가 설치되어 있어야 합니다 (`brew install uv` 또는 `curl -LsSf https://astral.sh/uv/install.sh | sh`)
-
----
-
-## 동작 원리
-
-```
-Claude Code A ──stdio──► MCP Server A ──┐
-Claude Code B ──stdio──► MCP Server B ──┤ HTTP (localhost:3334)
-Claude Code C ──stdio──► MCP Server C ──┘
-                                        │
-                                        ▼
-                            ClawOps CallMe Daemon (공유)
-                              ├── ClawOps SDK Agent
-                              │     ├── Control WS (reverse, no ngrok!)
-                              │     └── Media WS (per-call)
-                              ├── CallMeSession
-                              │     ├── OpenAI Realtime STT
-                              │     └── OpenAI TTS
-                              └── Claude CLI (인바운드)
-                                        │
-                                        ▼
-                                    ClawOps 서버
-                                        │
-                                        ▼
-                                  전화가 울림
-                                  사용자가 말함
-                                  텍스트가 Claude에게 전달
-```
-
-**v3.0의 핵심 변경**: ngrok 터널, 웹훅 HTTP 서버, WebSocket 미디어 서버가 모두 제거되고 ClawOps Python SDK의 **reverse WebSocket**으로 대체되었습니다. 에이전트가 서버에 직접 연결하므로 공개 URL이 필요하지 않습니다.
-
-여러 Claude Code 세션이 하나의 데몬 프로세스를 공유합니다. 첫 번째 MCP 서버가 데몬을 자동 시작하고, 이후 서버들은 기존 데몬에 연결됩니다. 모든 MCP 서버가 연결을 끊으면 30초 후 데몬이 자동 종료됩니다.
 
 ---
 
@@ -173,53 +148,6 @@ await end_call({
 
 ---
 
-## 인바운드 콜 (수신 전화)
-
-외부 발신자(또는 본인)가 전화번호로 직접 전화하면 Claude가 워크스페이스 코드에 접근하여 응답합니다. 전화번호가 Claude Code의 음성 인터페이스가 됩니다.
-
-### 설정
-
-기존 환경변수와 함께 다음 변수를 추가하여 인바운드 콜을 활성화하세요:
-
-| 변수                             | 필수             | 기본값        | 설명                                           |
-| -------------------------------- | ---------------- | ------------- | ---------------------------------------------- |
-| `CALLME_INBOUND_ENABLED`         | 아니오           | `false`       | 인바운드 콜 처리 활성화                        |
-| `CALLME_WORKSPACE_DIR`           | 인바운드 활성 시 | —             | 인바운드 콜에서 Claude CLI가 실행되는 디렉토리 |
-| `CALLME_INBOUND_WHITELIST`       | 아니오           | —             | 추가 허용 전화번호 (쉼표 구분, E.164 형식)     |
-| `CALLME_INBOUND_PERMISSION_MODE` | 아니오           | `plan`        | 인바운드 세션의 Claude Code 권한 모드          |
-| `CALLME_INBOUND_MAX_CALLS`       | 아니오           | `1`           | 최대 동시 인바운드 콜 수                       |
-| `CALLME_INBOUND_GREETING`        | 아니오           | 한국어 기본값 | 전화 응답 시 인사 메시지                       |
-
-### 동작 흐름
-
-```
-발신자가 전화번호로 전화
-        │
-        ▼
-ClawOps → SDK Control WS → CallMe Daemon
-        │
-        ▼
-화이트리스트 확인 (사용자 번호 자동 허용)
-        │
-        ▼
-TTS 인사말 재생 (콜드 스타트 지연 커버)
-        │
-        ▼
-CALLME_WORKSPACE_DIR에서 Claude CLI 실행
-        │
-        ▼
-음성 대화 루프 (STT ↔ Claude ↔ TTS)
-```
-
-### 참고 사항
-
-- `CALLME_USER_PHONE_NUMBER`는 자동으로 화이트리스트에 추가됨 — 별도 등록 불필요
-- TTS 인사말이 Claude CLI 콜드 스타트 지연(첫 턴에서 5~15초)을 커버
-- 아웃바운드와 인바운드 콜이 동시성 제한을 공유 — 기본적으로 한 번에 한 통화만 가능
-- 인바운드 세션은 워크스페이스의 기존 MCP 설정, 스킬, `CLAUDE.md`를 사용
-
----
-
 ## 요금제
 
 ### ClawOps
@@ -228,23 +156,16 @@ CALLME_WORKSPACE_DIR에서 Claude CLI 실행
 
 > **수신통화(인바운드)는 모든 플랜에서 무제한 무료**입니다. 비용은 발신통화(아웃바운드)에만 발생합니다.
 
-| 플랜           | 월 요금   | 회선 (=전화번호) | 동시통화 | 발신통화     | SMS     | 수신통화    |
-| -------------- | --------- | ---------------- | -------- | ------------ | ------- | ----------- |
-| **Starter**    | ₩19,900   | 1개              | 1건      | 60분 포함    | 100건   | 무제한 무료 |
-| **Growth**     | ₩49,900   | 3개              | 3건      | 300분 포함   | 500건   | 무제한 무료 |
-| **Business**   | ₩149,000  | 10개             | 10건     | 1,000분 포함 | 3,000건 | 무제한 무료 |
-| **Enterprise** | 별도 문의 | 맞춤             | 맞춤     | 종량제       | 종량제  | 무제한 무료 |
+| 플랜           | 월 요금   | 회선 (=전화번호) | 동시통화 | 발신통화     | 수신통화    |
+| -------------- | --------- | ---------------- | -------- | ------------ | ----------- |
+| **Starter**    | ₩19,900   | 1개              | 1건      | 60분 포함    | 무제한 무료 |
+| **Growth**     | ₩49,900   | 3개              | 3건      | 300분 포함   | 무제한 무료 |
+| **Business**   | ₩149,000  | 10개             | 10건     | 1,000분 포함 | 무제한 무료 |
+| **Enterprise** | 별도 문의 | 맞춤             | 맞춤     | 종량제       | 무제한 무료 |
 
-**종량제 단가** (포함 분량 초과 시):
+포함 분량 초과 시 발신통화 **116원/분**, 회선 추가 **1,500원/월**.
 
-| 항목      | 단가       |
-| --------- | ---------- |
-| 발신통화  | 116원/분   |
-| 수신통화  | 무료       |
-| SMS       | 17원/건    |
-| 회선 추가 | 1,500원/월 |
-
-> 1회선 = 전화번호 1개 = 동시통화 1건. 수신통화는 무료입니다.
+> 1회선 = 전화번호 1개 = 동시통화 1건.
 
 ### OpenAI (음성 처리)
 
@@ -269,7 +190,6 @@ CALLME_WORKSPACE_DIR에서 Claude CLI 실행
 
 1. `claude --debug`로 MCP 서버 로그(stderr) 확인
 2. ClawOps 인증 정보가 올바른지 확인
-3. ClawOps 서버가 Agent Listen 모드를 지원하는지 확인
 
 ### 데몬 문제
 
@@ -277,6 +197,13 @@ CALLME_WORKSPACE_DIR에서 Claude CLI 실행
 2. 데몬 상태 확인: `curl http://127.0.0.1:3334/status`
 3. 비정상 데몬 종료: `kill $(cat ~/.callme/daemon.pid)`
 4. 잠금 해제: `rmdir ~/.callme/daemon.lock.d 2>/dev/null`
+
+---
+
+## 더 알아보기
+
+- [동작 원리 및 아키텍처](docs/architecture.md)
+- [인바운드 콜 상세 설정](docs/architecture.md#인바운드-콜-수신-전화)
 
 ---
 
