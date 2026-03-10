@@ -8,18 +8,72 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
+from logging.handlers import RotatingFileHandler
 
 from .call_manager import CallManager
 from .config import load_config, validate_config
 from .daemon_api import DaemonApi
-from .daemon_lifecycle import cleanup_pid_file, write_control_port, write_pid_file
+from .daemon_lifecycle import (
+    CALLME_DIR,
+    LOG_BACKUP_COUNT,
+    LOG_FILE,
+    LOG_MAX_BYTES,
+    cleanup_pid_file,
+    write_control_port,
+    write_pid_file,
+)
+
+
+class _StreamToLogger:
+    """File-like wrapper that forwards writes to the logging system."""
+
+    def __init__(self, logger: logging.Logger, level: int) -> None:
+        self._logger = logger
+        self._level = level
+        self._buffer = ""
+        self.encoding = "utf-8"
+
+    def write(self, message: str) -> int:
+        if not message:
+            return 0
+        self._buffer += message
+        while "\n" in self._buffer:
+            line, self._buffer = self._buffer.split("\n", 1)
+            line = line.rstrip("\r")
+            if line:
+                self._logger.log(self._level, line)
+        return len(message)
+
+    def flush(self) -> None:
+        if self._buffer:
+            line = self._buffer.rstrip("\r")
+            if line:
+                self._logger.log(self._level, line)
+            self._buffer = ""
+
+
+CALLME_DIR.mkdir(parents=True, exist_ok=True)
+
+if LOG_MAX_BYTES > 0:
+    log_handler: logging.Handler = RotatingFileHandler(
+        LOG_FILE,
+        maxBytes=LOG_MAX_BYTES,
+        backupCount=max(LOG_BACKUP_COUNT, 0),
+        encoding="utf-8",
+    )
+else:
+    log_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(name)s] %(levelname)s %(message)s",
-    stream=sys.stderr,
+    handlers=[log_handler],
 )
 log = logging.getLogger("callme.daemon")
+
+# Capture stray prints so everything goes through the rotating log handler.
+sys.stdout = _StreamToLogger(logging.getLogger("callme.stdout"), logging.INFO)
+sys.stderr = _StreamToLogger(logging.getLogger("callme.stderr"), logging.ERROR)
 
 SHUTDOWN_GRACE_S = 30
 

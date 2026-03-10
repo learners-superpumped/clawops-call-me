@@ -17,6 +17,8 @@ PID_FILE = CALLME_DIR / "daemon.pid"
 PORT_FILE = CALLME_DIR / "daemon.port"
 LOCK_DIR = CALLME_DIR / "daemon.lock.d"
 LOG_FILE = CALLME_DIR / "daemon.log"
+LOG_MAX_BYTES = int(os.environ.get("CALLME_LOG_MAX_BYTES", 5 * 1024 * 1024))
+LOG_BACKUP_COUNT = int(os.environ.get("CALLME_LOG_BACKUPS", 5))
 
 DEFAULT_CONTROL_PORT = 3334
 DAEMON_READY_TIMEOUT_S = 25.0
@@ -27,6 +29,35 @@ MAX_SPAWN_RETRIES = 5
 
 def _ensure_dir() -> None:
     CALLME_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _log_backup_path(index: int) -> Path:
+    return LOG_FILE.with_name(f"{LOG_FILE.name}.{index}")
+
+
+def _rotate_log_file_if_needed() -> None:
+    """Rotate daemon log file when it exceeds the configured size."""
+    if LOG_BACKUP_COUNT <= 0 or LOG_MAX_BYTES <= 0:
+        return
+
+    try:
+        if LOG_FILE.stat().st_size < LOG_MAX_BYTES:
+            return
+    except FileNotFoundError:
+        return
+
+    for index in range(LOG_BACKUP_COUNT - 1, 0, -1):
+        src = _log_backup_path(index)
+        dst = _log_backup_path(index + 1)
+        try:
+            src.replace(dst)
+        except FileNotFoundError:
+            pass
+
+    try:
+        LOG_FILE.replace(_log_backup_path(1))
+    except FileNotFoundError:
+        pass
 
 
 def get_control_port() -> int:
@@ -125,7 +156,7 @@ async def _wait_for_daemon_ready(port: int) -> None:
 
 def _spawn_daemon_process(project_root: str) -> None:
     _ensure_dir()
-    log_fd = open(LOG_FILE, "a")
+    _rotate_log_file_if_needed()
     # Use uv run to auto-resolve dependencies (matches plugin.json)
     import shutil
 
@@ -140,7 +171,7 @@ def _spawn_daemon_process(project_root: str) -> None:
         start_new_session=True,
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
-        stderr=log_fd,
+        stderr=subprocess.DEVNULL,
     )
 
 
