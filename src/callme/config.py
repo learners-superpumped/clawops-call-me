@@ -46,6 +46,10 @@ class Config:
     inbound_whitelist: list[str] = field(default_factory=list)
     inbound_greeting: str = "안녕하세요"
 
+    # Recording
+    recording_enabled: bool = True
+    recording_path: str = ""
+
 
 def load_config() -> Config:
     config = Config(
@@ -85,6 +89,11 @@ def load_config() -> Config:
             "CALLME_INBOUND_GREETING",
             "안녕하세요",
         ),
+        recording_enabled=os.environ.get(
+            "CALLME_RECORDING_ENABLED", "true"
+        ).lower()
+        in ("true", "1", "yes"),
+        recording_path=os.environ.get("CALLME_RECORDING_PATH", ""),
     )
     return config
 
