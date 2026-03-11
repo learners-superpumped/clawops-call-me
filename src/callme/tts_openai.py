@@ -16,7 +16,7 @@ class OpenAITTS:
     def __init__(
         self,
         api_key: str,
-        voice: str = "onyx",
+        voice: str = "nova",
         model: str = "tts-1",
     ) -> None:
         self._client = AsyncOpenAI(api_key=api_key)

@@ -81,13 +81,13 @@
 
 #### 기타 (선택)
 
-| 변수                             | 기본값                     | 설명                                                 |
-| -------------------------------- | -------------------------- | ---------------------------------------------------- |
-| `CALLME_CLAWOPS_BASE_URL`        | `https://api.claw-ops.com` | ClawOps API 기본 URL                                 |
-| `CALLME_TTS_VOICE`               | `onyx`                     | OpenAI 음성: alloy, echo, fable, onyx, nova, shimmer |
-| `CALLME_CONTROL_PORT`            | `3334`                     | 데몬 제어 API 포트                                   |
-| `CALLME_TRANSCRIPT_TIMEOUT_MS`   | `180000`                   | 사용자 음성 대기 타임아웃 (3분)                      |
-| `CALLME_STT_SILENCE_DURATION_MS` | `800`                      | 발화 종료 감지 무음 시간                             |
+| 변수                             | 기본값                     | 설명                                                                    |
+| -------------------------------- | -------------------------- | ----------------------------------------------------------------------- |
+| `CALLME_CLAWOPS_BASE_URL`        | `https://api.claw-ops.com` | ClawOps API 기본 URL                                                    |
+| `CALLME_TTS_VOICE`               | `nova`                     | OpenAI 음성: alloy, ash, coral, echo, fable, nova, onyx, sage, shimmer  |
+| `CALLME_CONTROL_PORT`            | `3334`                     | 데몬 제어 API 포트                                                      |
+| `CALLME_TRANSCRIPT_TIMEOUT_MS`   | `180000`                   | 사용자 음성 대기 타임아웃 (3분)                                         |
+| `CALLME_STT_SILENCE_DURATION_MS` | `800`                      | 발화 종료 감지 무음 시간                                                |
 
 ### 4. 플러그인 설치
 
