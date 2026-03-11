@@ -132,7 +132,6 @@ mix:       [in only  ][in + out mix ][in only ][mix..]
 ```python
 # Config dataclass 추가 필드
 recording_enabled: bool = True
-recording_enabled: bool = True
 recording_path: str = ""
 ```
 
