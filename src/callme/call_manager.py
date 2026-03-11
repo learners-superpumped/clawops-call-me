@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from clawops.agent import ClawOpsAgent
+from clawops._exceptions import AgentError
 
 from .claude_session import ClaudeSessionManager
 from .config import Config
@@ -133,7 +134,17 @@ class CallManager:
         self._session.reset()
 
         log.info("Initiating outbound call to %s", dest)
-        call = await self._agent.call(to=dest)
+        try:
+            call = await self._agent.call(to=dest)
+        except AgentError as e:
+            status = getattr(e, "status", None)
+            if status == 429:
+                raise CallConflictError(
+                    "동시 통화 한도를 초과했습니다. 잠시 후 다시 시도해주세요."
+                ) from e
+            if status == 403:
+                raise CallForbiddenError(str(e)) from e
+            raise
 
         # 미디어 스트림 연결 대기
         await self._session.wait_ready(timeout=30.0)

@@ -112,6 +112,8 @@ class DaemonApi:
             return web.json_response(result)
         except CallConflictError as e:
             return web.json_response({"error": str(e)}, status=409)
+        except CallForbiddenError as e:
+            return web.json_response({"error": str(e)}, status=403)
         except Exception as e:
             log.exception("Call error")
             return web.json_response({"error": str(e)}, status=500)
