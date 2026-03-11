@@ -55,7 +55,7 @@ def load_config() -> Config:
         phone_number=os.environ.get("CALLME_PHONE_NUMBER", ""),
         user_phone_number=os.environ.get("CALLME_USER_PHONE_NUMBER", ""),
         openai_api_key=os.environ.get("CALLME_OPENAI_API_KEY", ""),
-        tts_voice=os.environ.get("CALLME_TTS_VOICE", "onyx"),
+        tts_voice=os.environ.get("CALLME_TTS_VOICE", "marin"),
         tts_model=os.environ.get("CALLME_TTS_MODEL", "tts-1"),
         stt_model=os.environ.get("CALLME_STT_MODEL", "gpt-4o-transcribe"),
         stt_silence_duration_ms=int(
