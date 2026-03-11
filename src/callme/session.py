@@ -86,7 +86,7 @@ class CallMeSession:
         # ulaw 8kHz → PCM16 8kHz → PCM16 24kHz (OpenAI STT 입력)
         pcm16_8k = ulaw_to_pcm16(audio)
         pcm16_24k = resample_pcm16(pcm16_8k, from_rate=8000, to_rate=24000)
-        self._stt.send_audio(pcm16_24k)
+        await self._stt.send_audio(pcm16_24k)
 
     async def stop(self) -> None:
         """SDK가 통화 종료 시 호출."""

@@ -122,13 +122,13 @@ class OpenAIRealtimeSTT:
         except Exception:
             log.exception("STT reconnect failed")
 
-    def send_audio(self, pcm16_24k: bytes) -> None:
+    async def send_audio(self, pcm16_24k: bytes) -> None:
         """Send PCM16 24kHz audio to STT."""
         if not self._connected or not self._ws:
             return
         payload = base64.b64encode(pcm16_24k).decode("ascii")
         try:
-            self._ws.send_nowait(json.dumps({
+            await self._ws.send(json.dumps({
                 "type": "input_audio_buffer.append",
                 "audio": payload,
             }))
