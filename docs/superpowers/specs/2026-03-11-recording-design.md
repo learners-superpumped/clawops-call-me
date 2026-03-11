@@ -2,7 +2,7 @@
 
 ## Overview
 
-clawops-call-me에 통화 녹음 기능을 추가한다. Python SDK의 `AudioRecorder` 패턴을 기반으로, wall-clock 타이머 동기화와 실시간 3-file mix를 구현한다.
+clawops-call-me에 통화 녹음 기능을 추가한다. Python SDK의 `AudioRecorder`에서 영감을 받되, wall-clock 타이머 동기화와 실시간 3-file mix는 새로 설계한다. SDK 원본은 2-file append-only(in.wav + raw.ulaw)이며, 이 설계는 시간 동기화된 3-WAV 파일 생성으로 확장한다.
 
 ## Requirements
 
@@ -57,7 +57,7 @@ AudioRecorder(path: str | Path, call_id: str)
 - `_in_written < expected`이면 차이만큼 `\x00` 무음 패딩 후 기록
 - mix 파일에도 동일 위치에 기록 (겹침 시 샘플 합산)
 
-`write_outbound(pcm16_8k: bytes) -> None`
+`write_outbound(pcm16: bytes) -> None`
 - 송신 오디오 기록 (PCM16 8kHz, TTS에서 리샘플 후 전달)
 - Wall-clock gap 동일 처리
 - mix 파일에도 동일 위치에 기록 (겹침 시 샘플 합산)
@@ -85,13 +85,17 @@ mix:       [in only  ][in + out mix ][in only ][mix..]
 #### Mix Overlap Handling
 
 두 트랙이 동시에 존재하는 구간 (인터럽트, 동시 발화):
-1. mix 파일에서 해당 offset으로 seek
-2. 기존 데이터 read
-3. 새 샘플과 합산: `mixed = clamp(existing + new, -32768, 32767)`
+1. mix 파일에서 해당 offset(WAV_HEADER_SIZE + byte_position)으로 seek
+2. 기존 데이터 read (이미 기록된 다른 트랙의 샘플)
+3. `struct.unpack`으로 int16 배열 디코딩, Python int로 합산 후 clamp(-32768, 32767), `struct.pack`으로 재인코딩
 4. seek back → write
 
 겹치지 않는 구간:
 - 해당 트랙 데이터를 그대로 mix에 기록 (gap 무음 포함)
+
+**동시성 안전:** asyncio는 단일 스레드 이벤트 루프이므로 `write_inbound`와 `write_outbound`는 동일 스레드에서 실행된다. 두 메서드 모두 sync이고 내부에 `await` 없이 완료되므로 인터리브 없이 원자적으로 실행된다. 별도 lock이 필요하지 않다.
+
+**Sync I/O 허용 근거:** 오디오 청크는 20ms 단위(ulaw 160B → PCM16 320B)로 매우 작다. 파일 I/O는 OS 페이지 캐시에서 처리되어 sub-millisecond이므로 이벤트 루프 블로킹 영향 무시 가능.
 
 ### Modified File: `src/callme/session.py`
 
@@ -128,8 +132,11 @@ mix:       [in only  ][in + out mix ][in only ][mix..]
 ```python
 # Config dataclass 추가 필드
 recording_enabled: bool = True
-recording_path: str = ""  # 빈 문자열이면 ~/.callme/recordings 사용
+recording_enabled: bool = True
+recording_path: str = ""
 ```
+
+**`recording_path` 해석:** `load_config()`에서 환경변수가 빈 문자열이면 빈 문자열 그대로 저장. `session.py`에서 `AudioRecorder` 생성 시 빈 문자열이면 `~/.callme/recordings`로 resolve한다.
 
 ```python
 # load_config() 추가
@@ -158,3 +165,10 @@ recording_path=os.environ.get("CALLME_RECORDING_PATH", ""),
 - **크래시:** 실시간 기록이므로 크래시 시점까지의 오디오는 보존 (헤더만 부정확할 수 있음)
 - **디스크 에러:** write 실패 시 로그만 남기고 통화는 계속 진행 (녹음은 best-effort)
 - **동시 발화 (인터럽트):** 샘플 합산 + clipping 방지로 자연스러운 mix 유지
+- **인바운드/아웃바운드 통화 모두 지원:** 둘 다 동일한 `CallMeSession`을 통하므로 녹음이 자동 적용됨. `reset()`에서 recorder를 정리하며, outbound(`on_call_end`)와 inbound(`_run_inbound_conversation` finally) 양쪽 경로 모두 `reset()`을 호출한다.
+
+## Testing
+
+- **Unit tests:** AudioRecorder의 write_inbound only, write_outbound only, 겹침 구간, gap 삽입 검증
+- **WAV 유효성:** 출력 파일이 표준 WAV 플레이어에서 재생 가능한지 확인
+- **Edge cases:** 0초 통화, 한쪽만 음성 있는 경우, 긴 무음 gap 후 재개
