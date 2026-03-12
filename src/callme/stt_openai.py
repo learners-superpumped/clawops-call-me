@@ -3,6 +3,7 @@
 Uses the OpenAI Realtime Transcription API with server-side VAD.
 Audio input: PCM16 24kHz mono.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -20,7 +21,7 @@ class OpenAIRealtimeSTT:
     def __init__(
         self,
         api_key: str,
-        model: str = "gpt-4o-transcribe",
+        model: str = "whisper-1",
         silence_duration_ms: int = 800,
     ) -> None:
         self._api_key = api_key
@@ -53,22 +54,26 @@ class OpenAIRealtimeSTT:
         log.info("STT WebSocket connected")
 
         # Configure transcription session
-        await self._ws.send(json.dumps({
-            "type": "transcription_session.update",
-            "session": {
-                "input_audio_format": "pcm16",
-                "input_audio_transcription": {
-                    "model": self._model,
-                    "language": "ko",
-                },
-                "turn_detection": {
-                    "type": "server_vad",
-                    "threshold": 0.5,
-                    "prefix_padding_ms": 300,
-                    "silence_duration_ms": self._silence_duration_ms,
-                },
-            },
-        }))
+        await self._ws.send(
+            json.dumps(
+                {
+                    "type": "transcription_session.update",
+                    "session": {
+                        "input_audio_format": "pcm16",
+                        "input_audio_transcription": {
+                            "model": self._model,
+                            "language": "ko",
+                        },
+                        "turn_detection": {
+                            "type": "server_vad",
+                            "threshold": 0.5,
+                            "prefix_padding_ms": 300,
+                            "silence_duration_ms": self._silence_duration_ms,
+                        },
+                    },
+                }
+            )
+        )
 
         self._recv_task = asyncio.create_task(self._recv_loop())
 
@@ -111,7 +116,9 @@ class OpenAIRealtimeSTT:
 
         self._reconnect_attempts += 1
         delay = min(1.0 * (2 ** (self._reconnect_attempts - 1)), 30.0)
-        log.info("STT reconnecting in %.1fs (attempt %d)", delay, self._reconnect_attempts)
+        log.info(
+            "STT reconnecting in %.1fs (attempt %d)", delay, self._reconnect_attempts
+        )
         await asyncio.sleep(delay)
 
         if self._closed:
@@ -128,10 +135,14 @@ class OpenAIRealtimeSTT:
             return
         payload = base64.b64encode(pcm16_24k).decode("ascii")
         try:
-            await self._ws.send(json.dumps({
-                "type": "input_audio_buffer.append",
-                "audio": payload,
-            }))
+            await self._ws.send(
+                json.dumps(
+                    {
+                        "type": "input_audio_buffer.append",
+                        "audio": payload,
+                    }
+                )
+            )
         except Exception:
             log.debug("Failed to send audio to STT")
 
